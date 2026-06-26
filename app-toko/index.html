@@ -25,17 +25,35 @@
                 <p class="text-sm text-slate-500 mt-1">Sistem manajemen inventaris</p>
                 <p class="text-sm text-slate-500 mt-1">Nama: Ryan Juniarto | NIM: 231220046</p>
             </div>
-            <div class="bg-emerald-100 text-emerald-600 p-3 rounded-xl hidden sm:block">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                </svg>
+
+            <!-- User Info + Logout -->
+            <div class="flex items-center gap-3">
+                <div class="text-right hidden sm:block">
+                    <p class="text-xs text-slate-400">Login sebagai</p>
+                    <p id="nama-user" class="text-sm font-semibold text-violet-600"></p>
+                </div>
+                <div class="bg-emerald-100 text-emerald-600 p-3 rounded-xl hidden sm:block">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                    </svg>
+                </div>
+
+                <!-- ✅ TOMBOL DASHBOARD BARU -->
+                <a href="/dashboard.html"
+                    class="bg-violet-100 text-violet-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-violet-200 transition-all duration-200">
+                    📊 Dashboard
+                </a>
+
+                <button
+                    onclick="logout()"
+                    class="bg-red-100 text-red-600 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-red-200 transition-all duration-200">
+                    🚪 Logout
+                </button>
             </div>
         </div>
 
-        <!-- ========================================== -->
         <!-- FORM TAMBAH BARANG -->
-        <!-- ========================================== -->
         <div class="bg-white border-b border-gray-200 p-6">
             <button id="btnTambah"
                 class="bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg">
@@ -50,33 +68,36 @@
                 <h2 class="text-lg font-bold text-slate-700 mb-4">➕ Tambah Barang Baru</h2>
 
                 <form id="formBarang" class="space-y-4" onsubmit="return false">
-                    <!-- Nama Barang -->
                     <div>
-                        <label for="nama_barang" class="block text-sm font-medium text-slate-600 mb-1">
-                            Nama Barang
-                        </label>
+                        <label for="nama_barang" class="block text-sm font-medium text-slate-600 mb-1">Nama Barang</label>
                         <input type="text" id="nama_barang" name="nama_barang" required
                             placeholder="Masukkan nama barang"
                             class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all duration-200">
                     </div>
 
-                    <!-- Harga -->
                     <div>
-                        <label for="harga" class="block text-sm font-medium text-slate-600 mb-1">
-                            Harga (Rp)
-                        </label>
+                        <label for="harga" class="block text-sm font-medium text-slate-600 mb-1">Harga (Rp)</label>
                         <input type="number" id="harga" name="harga" required min="0" step="100"
                             placeholder="Masukkan harga"
                             class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all duration-200">
                     </div>
 
-                    <!-- Tombol Aksi -->
+                    <!-- Input Gambar -->
+                    <div>
+                        <label for="gambar" class="block text-sm font-medium text-slate-600 mb-1">Foto Barang (opsional)</label>
+                        <input type="file" id="gambar" name="gambar" accept="image/*"
+                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200">
+                        <p class="text-xs text-slate-400 mt-1">Format: JPG, PNG, GIF, WEBP. Maks 2MB.</p>
+
+                        <!-- Preview gambar -->
+                        <img id="previewGambar" src="" alt="Preview" class="hidden mt-3 w-32 h-32 object-cover rounded-lg border border-slate-200">
+                    </div>
+
                     <div class="flex gap-3 pt-2">
                         <button type="submit"
                             class="bg-emerald-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M5 13l4 4L19 7"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                             Simpan Barang
                         </button>
@@ -84,30 +105,44 @@
                         <button type="button" id="btnBatal"
                             class="bg-slate-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-600 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                             Batal
                         </button>
                     </div>
 
-                    <!-- Pesan Status -->
                     <div id="pesanStatus" class="hidden"></div>
                 </form>
             </div>
         </div>
 
+        <!-- ===================== -->
+        <!-- KOTAK PENCARIAN      -->
+        <!-- ===================== -->
+        <div class="bg-white border-b border-gray-200 px-6 py-4 flex flex-col sm:flex-row gap-3 items-center justify-between">
+            <div class="relative w-full sm:max-w-sm">
+                <span class="absolute inset-y-0 left-3 flex items-center text-slate-400 pointer-events-none">🔍</span>
+                <input
+                    type="text"
+                    id="inputCari"
+                    placeholder="Cari nama barang..."
+                    onkeyup="cariBarang(this.value)"
+                    class="w-full pl-9 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all duration-200 text-sm">
+            </div>
+            <p id="info-total" class="text-sm text-slate-400 whitespace-nowrap"></p>
+        </div>
+
         <!-- Tabel -->
-        <div class="bg-white shadow-sm rounded-b-xl overflow-hidden">
+        <div class="bg-white shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr
-                            class="bg-slate-50 text-slate-600 text-sm uppercase tracking-wider border-b border-gray-200">
-                            <th class="py-4 px-6 font-semibold w-24">ID</th>
+                        <tr class="bg-slate-50 text-slate-600 text-sm uppercase tracking-wider border-b border-gray-200">
+                            <th class="py-4 px-6 font-semibold w-20">Foto</th>
+                            <th class="py-4 px-6 font-semibold w-16">ID</th>
                             <th class="py-4 px-6 font-semibold">Nama Barang</th>
                             <th class="py-4 px-6 font-semibold text-right">Harga</th>
-                            <th class="py-4 px-6 font-semibold text-center w-24">Aksi</th>
+                            <th class="py-4 px-6 font-semibold text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="tabel-barang" class="divide-y divide-gray-100">
@@ -115,6 +150,29 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        <!-- ========================= -->
+        <!-- NAVIGASI HALAMAN          -->
+        <!-- ========================= -->
+        <div class="bg-white rounded-b-xl shadow-sm border-t border-gray-100 px-6 py-4 flex items-center justify-between">
+            <button
+                id="btnPrev"
+                onclick="gantiHalaman(-1)"
+                disabled
+                class="flex items-center gap-2 bg-slate-100 text-slate-600 px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-purple-100 hover:text-purple-700 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
+                ◀ Prev
+            </button>
+
+            <span id="info-halaman" class="text-sm text-slate-500 font-medium">Halaman 1 / 1</span>
+
+            <button
+                id="btnNext"
+                onclick="gantiHalaman(1)"
+                disabled
+                class="flex items-center gap-2 bg-slate-100 text-slate-600 px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-purple-100 hover:text-purple-700 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
+                Next ▶
+            </button>
         </div>
 
         <!-- Status PWA -->
