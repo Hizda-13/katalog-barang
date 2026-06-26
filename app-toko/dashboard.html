@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#8b5cf6">
+    <title>Dashboard Grafik</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- ✅ Import Chart.js via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 md:p-8 font-sans antialiased text-slate-800">
+
+<div class="max-w-4xl mx-auto">
+
+    <!-- Header -->
+    <div class="bg-white rounded-t-xl shadow-sm border-b border-gray-100 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">📊 Dashboard Grafik</h1>
+            <p class="text-sm text-slate-500 mt-1">Visualisasi data inventaris toko</p>
+            <p class="text-sm text-slate-500 mt-1">Nama: Ryan Juniarto | NIM: 231220046</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="/index.html"
+               class="bg-violet-100 text-violet-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-violet-200 transition-all duration-200">
+                📦 Ke Katalog
+            </a>
+            <button onclick="logout()"
+                class="bg-red-100 text-red-600 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-red-200 transition-all duration-200">
+                🚪 Logout
+            </button>
+        </div>
+    </div>
+
+    <!-- Kartu Statistik -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 text-center">
+            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Total Barang</p>
+            <p id="stat-total" class="text-3xl font-extrabold text-violet-600">-</p>
+            <p class="text-xs text-slate-400 mt-1">item</p>
+        </div>
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 text-center">
+            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Harga Tertinggi</p>
+            <p id="stat-maks" class="text-lg font-extrabold text-emerald-600 leading-tight">-</p>
+        </div>
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 text-center">
+            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Harga Terendah</p>
+            <p id="stat-mini" class="text-lg font-extrabold text-blue-600 leading-tight">-</p>
+        </div>
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 text-center">
+            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Rata-rata Harga</p>
+            <p id="stat-rata" class="text-lg font-extrabold text-orange-500 leading-tight">-</p>
+        </div>
+    </div>
+
+    <!-- Chart 1: Bar -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-4">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h2 class="text-lg font-bold text-slate-700">🏆 5 Barang Termahal</h2>
+                <p class="text-sm text-slate-400 mt-0.5">type: 'bar' — Cocok untuk perbandingan nilai antar barang</p>
+            </div>
+            <span class="bg-violet-100 text-violet-700 text-xs font-semibold px-3 py-1 rounded-full">Bar Chart</span>
+        </div>
+        <div id="loading-bar" class="text-center py-10 text-slate-400 animate-pulse">Memuat data...</div>
+        <div id="wrap-bar" class="hidden">
+            <!-- ✅ Tag <canvas> untuk Chart.js -->
+            <canvas id="chartBar"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 2: Pie -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-4">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h2 class="text-lg font-bold text-slate-700">🥧 Persentase Nilai Barang</h2>
+                <p class="text-sm text-slate-400 mt-0.5">type: 'pie' — Cocok untuk melihat kontribusi tiap barang terhadap total nilai</p>
+            </div>
+            <span class="bg-orange-100 text-orange-700 text-xs font-semibold px-3 py-1 rounded-full">Pie Chart</span>
+        </div>
+        <div id="loading-pie" class="text-center py-10 text-slate-400 animate-pulse">Memuat data...</div>
+        <div id="wrap-pie" class="hidden max-w-sm mx-auto">
+            <!-- ✅ Tag <canvas> untuk Chart.js -->
+            <canvas id="chartPie"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 3: Doughnut -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-4">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h2 class="text-lg font-bold text-slate-700">🍩 Distribusi Harga (Donat)</h2>
+                <p class="text-sm text-slate-400 mt-0.5">type: 'doughnut' — Mirip pie, lebih modern dan lega</p>
+            </div>
+            <span class="bg-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full">Doughnut Chart</span>
+        </div>
+        <div id="loading-donut" class="text-center py-10 text-slate-400 animate-pulse">Memuat data...</div>
+        <div id="wrap-donut" class="hidden max-w-sm mx-auto">
+            <!-- ✅ Tag <canvas> untuk Chart.js -->
+            <canvas id="chartDoughnut"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 4: Line -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-4 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h2 class="text-lg font-bold text-slate-700">📈 Tren Harga Barang</h2>
+                <p class="text-sm text-slate-400 mt-0.5">type: 'line' — Menampilkan pergerakan harga dari titik ke titik</p>
+            </div>
+            <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">Line Chart</span>
+        </div>
+        <div id="loading-line" class="text-center py-10 text-slate-400 animate-pulse">Memuat data...</div>
+        <div id="wrap-line" class="hidden">
+            <!-- ✅ Tag <canvas> untuk Chart.js -->
+            <canvas id="chartLine"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// ── Cek Auth ──
+const token = localStorage.getItem('token');
+if (!token) window.location.href = '/login.html';
+
+function logout() {
+    if (!confirm('Yakin ingin keluar?')) return;
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    window.location.href = '/login.html';
+}
+
+const API_URL = '/api-toko';
+
+const formatRupiah = new Intl.NumberFormat('id-ID', {
+    style: 'currency', currency: 'IDR', minimumFractionDigits: 0
+});
+
+const COLORS = [
+    'rgba(139, 92, 246, 0.8)',
+    'rgba(16, 185, 129, 0.8)',
+    'rgba(59, 130, 246, 0.8)',
+    'rgba(245, 158, 11, 0.8)',
+    'rgba(239, 68, 68, 0.8)',
+];
+const COLORS_BORDER = COLORS.map(c => c.replace('0.8', '1'));
+
+// ── Fetch ke statistik.php, ambil labels & values ──
+async function muatGrafik() {
+    try {
+        const response = await fetch(`${API_URL}/statistik.php`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const hasil = await response.json();
+        if (hasil.status !== 'success') throw new Error('Respons tidak valid');
+
+        // Dua array JSON dari statistik.php
+        const labels = hasil.labels; // ['Laptop', 'HP', ...]
+        const values = hasil.values; // [15000000, 3000000, ...]
+        const stats  = hasil.stats;
+
+        // ── Isi Kartu Statistik ──
+        document.getElementById('stat-total').textContent = stats.total;
+        document.getElementById('stat-maks').textContent  = formatRupiah.format(stats.maks);
+        document.getElementById('stat-mini').textContent  = formatRupiah.format(stats.mini);
+        document.getElementById('stat-rata').textContent  = formatRupiah.format(Math.round(stats.rata));
+
+        const tooltipCallback = {
+            label: ctx => ' ' + formatRupiah.format(ctx.parsed.y ?? ctx.parsed)
+        };
+
+        // ── Chart 1: Bar ──
+        document.getElementById('loading-bar').classList.add('hidden');
+        document.getElementById('wrap-bar').classList.remove('hidden');
+        new Chart(document.getElementById('chartBar'), {
+            type: 'bar',  // ← tipe bar
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Harga (Rp)',
+                    data: values,
+                    backgroundColor: COLORS,
+                    borderColor: COLORS_BORDER,
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: tooltipCallback }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: val => formatRupiah.format(val) },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // ── Chart 2: Pie ──
+        document.getElementById('loading-pie').classList.add('hidden');
+        document.getElementById('wrap-pie').classList.remove('hidden');
+        new Chart(document.getElementById('chartPie'), {
+            type: 'pie',  // ← tipe pie
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: COLORS,
+                    borderColor: '#ffffff',
+                    borderWidth: 3,
+                    hoverOffset: 10,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { padding: 16 } },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.label}: ${formatRupiah.format(ctx.parsed)}`
+                        }
+                    }
+                }
+            }
+        });
+
+        // ── Chart 3: Doughnut ──
+        document.getElementById('loading-donut').classList.add('hidden');
+        document.getElementById('wrap-donut').classList.remove('hidden');
+        new Chart(document.getElementById('chartDoughnut'), {
+            type: 'doughnut',  // ← tipe doughnut
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: COLORS,
+                    borderColor: '#ffffff',
+                    borderWidth: 3,
+                    hoverOffset: 10,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { padding: 16 } },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.label}: ${formatRupiah.format(ctx.parsed)}`
+                        }
+                    }
+                }
+            }
+        });
+
+        // ── Chart 4: Line ──
+        document.getElementById('loading-line').classList.add('hidden');
+        document.getElementById('wrap-line').classList.remove('hidden');
+        new Chart(document.getElementById('chartLine'), {
+            type: 'line',  // ← tipe line
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Harga (Rp)',
+                    data: values,
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    borderColor: 'rgba(139, 92, 246, 1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: 'rgba(139, 92, 246, 1)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 9,
+                    fill: true,
+                    tension: 0.4,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: tooltipCallback }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: { callback: val => formatRupiah.format(val) },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Gagal memuat grafik:', error);
+        ['loading-bar','loading-pie','loading-donut','loading-line'].forEach(id => {
+            const el = document.getElementById(id);
+            el.innerHTML = `<p class="text-red-500">⚠️ Gagal memuat: ${error.message}</p>`;
+            el.classList.remove('animate-pulse');
+        });
+    }
+}
+
+muatGrafik();
+</script>
+
+</body>
+</html>
