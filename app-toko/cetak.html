@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cetak Laporan Inventaris</title>
+    <style>
+        /* ── Reset & Base ── */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background: #e5e7eb;
+            color: #000;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* ── Tombol Aksi (tidak tercetak) ── */
+        .tombol-aksi {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .tombol-aksi button {
+            padding: 10px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .tombol-aksi button:hover { opacity: 0.85; }
+
+        #btnCetak { background: #1e3a5f; color: white; }
+        #btnTutup { background: #6b7280; color: white; }
+
+        /* ── Kertas A4 Monokrom ── */
+        .kertas {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20mm 20mm 25mm 25mm;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+        }
+
+        /* ── Kop Surat ── */
+        .kop {
+            display: flex;
+            align-items: center;
+            border-bottom: 3px solid #000;
+            padding-bottom: 12px;
+            margin-bottom: 6px;
+            gap: 16px;
+        }
+
+        .kop-logo {
+            font-size: 48px;
+            line-height: 1;
+        }
+
+        .kop-teks { flex: 1; }
+
+        .kop-teks .instansi {
+            font-size: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .kop-teks .sub-instansi {
+            font-size: 13px;
+            color: #333;
+            margin-top: 2px;
+        }
+
+        .kop-teks .alamat {
+            font-size: 11px;
+            color: #555;
+            margin-top: 3px;
+        }
+
+        .garis-tipis {
+            border: none;
+            border-top: 1px solid #000;
+            margin-top: 4px;
+            margin-bottom: 16px;
+        }
+
+        /* ── Judul Laporan ── */
+        .judul-laporan {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .judul-laporan h2 {
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-decoration: underline;
+        }
+
+        .judul-laporan p {
+            font-size: 12px;
+            color: #444;
+            margin-top: 4px;
+        }
+
+        /* ── Info Laporan ── */
+        .info-laporan {
+            font-size: 12px;
+            margin-bottom: 14px;
+            line-height: 1.8;
+        }
+
+        .info-laporan table { border-collapse: collapse; }
+        .info-laporan td:first-child { width: 130px; }
+        .info-laporan td:nth-child(2) { width: 10px; padding: 0 6px; }
+
+        /* ── Tabel Data ── */
+        .tabel-data {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-bottom: 16px;
+        }
+
+        .tabel-data thead tr {
+            background: #1e3a5f;
+            color: #fff;
+        }
+
+        .tabel-data th {
+            padding: 8px 10px;
+            text-align: left;
+            border: 1px solid #000;
+            font-size: 12px;
+        }
+
+        .tabel-data th.text-right,
+        .tabel-data td.text-right { text-align: right; }
+
+        .tabel-data th.text-center,
+        .tabel-data td.text-center { text-align: center; }
+
+        .tabel-data tbody tr:nth-child(even) { background: #f3f4f6; }
+
+        .tabel-data tbody tr:hover { background: #e8edf5; }
+
+        .tabel-data td {
+            padding: 7px 10px;
+            border: 1px solid #aaa;
+            vertical-align: middle;
+        }
+
+        /* ── Baris Total ── */
+        .tabel-data tfoot tr {
+            background: #1e3a5f;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .tabel-data tfoot td {
+            padding: 8px 10px;
+            border: 1px solid #000;
+        }
+
+        /* ── Ringkasan Agregat ── */
+        .ringkasan {
+            border: 1px solid #000;
+            border-radius: 0;
+            padding: 10px 14px;
+            font-size: 12px;
+            margin-bottom: 20px;
+            background: #f9fafb;
+        }
+
+        .ringkasan h4 {
+            font-size: 13px;
+            font-weight: bold;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 6px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .ringkasan-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px 20px;
+        }
+
+        .ringkasan-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            border-bottom: 1px dotted #ccc;
+        }
+
+        .ringkasan-item .label { color: #444; }
+        .ringkasan-item .nilai { font-weight: bold; }
+        .ringkasan-item.highlight .nilai { color: #1e3a5f; font-size: 13px; }
+
+        /* ── Tanda Tangan ── */
+        .tanda-tangan {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        .ttd-box {
+            text-align: center;
+            width: 200px;
+        }
+
+        .ttd-box .ttd-kota { font-size: 12px; margin-bottom: 60px; }
+        .ttd-box .ttd-jabatan { font-size: 11px; color: #444; }
+        .ttd-box .ttd-nama {
+            font-size: 13px;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-top: 4px;
+        }
+        .ttd-box .ttd-nim { font-size: 11px; color: #555; }
+
+        /* ── Loading & Error ── */
+        .pesan-tengah {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* ── Print Mode ── */
+        @media print {
+            body { background: #fff; padding: 0; }
+            .tombol-aksi { display: none !important; }
+            .kertas {
+                box-shadow: none;
+                margin: 0;
+                padding: 15mm 20mm 20mm 25mm;
+                width: 100%;
+                min-height: auto;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Tombol Aksi (tidak tercetak) -->
+    <div class="tombol-aksi" id="tombolAksi">
+        <button id="btnCetak" onclick="cetakDokumen()">🖨️ Cetak / Simpan PDF</button>
+        <button id="btnTutup" onclick="window.close()">✖ Tutup Tab</button>
+    </div>
+
+    <!-- Kertas A4 -->
+    <div class="kertas" id="kertas">
+
+        <!-- Kop Surat -->
+        <div class="kop">
+            <div class="kop-logo">🏪</div>
+            <div class="kop-teks">
+                <div class="instansi">Toko Ryan — Sistem Inventaris</div>
+                <div class="sub-instansi">Universitas Muhammadiyah Pontianak</div>
+                <div class="alamat">Jl. Jend. Ahmad Yani No.111, Pontianak, Kalimantan Barat 78124</div>
+            </div>
+        </div>
+        <hr class="garis-tipis">
+
+        <!-- Judul Laporan -->
+        <div class="judul-laporan">
+            <h2>Laporan Data Inventaris Barang</h2>
+            <p id="tgl-cetak">Memuat tanggal...</p>
+        </div>
+
+        <!-- Info Laporan -->
+        <div class="info-laporan">
+            <table>
+                <tr>
+                    <td>Nama Mahasiswa</td>
+                    <td>:</td>
+                    <td><strong>Ryan Juniarto</strong></td>
+                </tr>
+                <tr>
+                    <td>NIM</td>
+                    <td>:</td>
+                    <td><strong>231220046</strong></td>
+                </tr>
+                <tr>
+                    <td>Program Studi</td>
+                    <td>:</td>
+                    <td>Teknik Informatika</td>
+                </tr>
+                <tr>
+                    <td>Mata Kuliah</td>
+                    <td>:</td>
+                    <td>Pemrograman Web / PWA</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Konten utama (diisi JS) -->
+        <div id="konten-laporan">
+            <div class="pesan-tengah">⏳ Memuat data dari server...</div>
+        </div>
+
+        <!-- Tanda Tangan -->
+        <div class="tanda-tangan">
+            <div class="ttd-box">
+                <div class="ttd-kota" id="ttd-kota">Pontianak, ...</div>
+                <div class="ttd-jabatan">Mahasiswa,</div>
+                <div class="ttd-nama">Ryan Juniarto</div>
+                <div class="ttd-nim">NIM. 231220046</div>
+            </div>
+        </div>
+
+    </div><!-- /kertas -->
+
+<script>
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/login.html';
+
+    const API_URL = '/api-toko';
+
+    const rupiah = new Intl.NumberFormat('id-ID', {
+        style: 'currency', currency: 'IDR', minimumFractionDigits: 0
+    });
+
+    async function muatLaporan() {
+        try {
+            const response = await fetch(`${API_URL}/cetak_laporan.php`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.status === 401) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            const hasil = await response.json();
+            if (hasil.status !== 'success') throw new Error(hasil.message);
+
+            const { data, agregat, dicetak_pada } = hasil;
+
+            // Isi tanggal
+            document.getElementById('tgl-cetak').textContent    = `Dicetak pada: ${dicetak_pada}`;
+            document.getElementById('ttd-kota').textContent     = `Pontianak, ${dicetak_pada.split(',')[0]}`;
+
+            // ── Baris tabel ──
+            let baris = '';
+            data.forEach((item, i) => {
+                baris += `
+                    <tr>
+                        <td class="text-center">${i + 1}</td>
+                        <td class="text-center">${item.id}</td>
+                        <td>${item.nama_barang}</td>
+                        <td class="text-right">${rupiah.format(item.harga)}</td>
+                    </tr>
+                `;
+            });
+
+            // ── Render HTML laporan ──
+            document.getElementById('konten-laporan').innerHTML = `
+
+                <!-- Tabel Data Barang -->
+                <table class="tabel-data">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width:40px">No</th>
+                            <th class="text-center" style="width:50px">ID</th>
+                            <th>Nama Barang</th>
+                            <th class="text-right" style="width:160px">Harga Satuan</th>
+                        </tr>
+                    </thead>
+                    <tbody>${baris}</tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-right">TOTAL NILAI ASET</td>
+                            <td class="text-right">${rupiah.format(agregat.total_aset)}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <!-- Ringkasan Agregat -->
+                <div class="ringkasan">
+                    <h4>Ringkasan Kalkulasi Agregat</h4>
+                    <div class="ringkasan-grid">
+                        <div class="ringkasan-item">
+                            <span class="label">Total Jenis Barang</span>
+                            <span class="nilai">${agregat.jumlah_barang} item</span>
+                        </div>
+                        <div class="ringkasan-item">
+                            <span class="label">Rata-rata Harga</span>
+                            <span class="nilai">${rupiah.format(Math.round(agregat.rata_harga))}</span>
+                        </div>
+                        <div class="ringkasan-item">
+                            <span class="label">Harga Tertinggi</span>
+                            <span class="nilai">${rupiah.format(agregat.harga_maks)}</span>
+                        </div>
+                        <div class="ringkasan-item">
+                            <span class="label">Harga Terendah</span>
+                            <span class="nilai">${rupiah.format(agregat.harga_mini)}</span>
+                        </div>
+                        <div class="ringkasan-item highlight" style="grid-column: 1 / -1; border-top: 2px solid #000; margin-top: 4px; padding-top: 6px;">
+                            <span class="label"><strong>TOTAL NILAI ASET GUDANG</strong></span>
+                            <span class="nilai">${rupiah.format(agregat.total_aset)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+        } catch (error) {
+            document.getElementById('konten-laporan').innerHTML = `
+                <div class="pesan-tengah" style="color:red">
+                    ⚠️ Gagal memuat data: ${error.message}
+                </div>
+            `;
+        }
+    }
+
+    function cetakDokumen() {
+        window.print();
+    }
+
+    muatLaporan();
+</script>
+</body>
+</html>
