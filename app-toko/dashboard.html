@@ -14,23 +14,24 @@
 <div class="max-w-4xl mx-auto">
 
     <!-- Header -->
-    <div class="bg-white rounded-t-xl shadow-sm border-b border-gray-100 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-            <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">📊 Dashboard Grafik</h1>
-            <p class="text-sm text-slate-500 mt-1">Visualisasi data inventaris toko</p>
-            <p class="text-sm text-slate-500 mt-1">Nama: Ryan Juniarto | NIM: 231220046</p>
-        </div>
-        <div class="flex gap-3">
-            <a href="/index.html"
-               class="bg-violet-100 text-violet-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-violet-200 transition-all duration-200">
-                📦 Ke Katalog
-            </a>
-            <button onclick="logout()"
-                class="bg-red-100 text-red-600 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-red-200 transition-all duration-200">
-                🚪 Logout
-            </button>
-        </div>
-    </div>
+   <div class="flex gap-3">
+    <a href="/index.html"
+       class="bg-violet-100 text-violet-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-violet-200 transition-all duration-200">
+        📦 Ke Katalog
+    </a>
+
+    <!-- ✅ TOMBOL CETAK LAPORAN -->
+    <button
+        onclick="window.open('/cetak.html', '_blank')"
+        class="bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-slate-200 transition-all duration-200">
+        🖨️ Cetak Laporan
+    </button>
+
+    <button onclick="logout()"
+        class="bg-red-100 text-red-600 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-red-200 transition-all duration-200">
+        🚪 Logout
+    </button>
+</div>
 
     <!-- Kartu Statistik -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
