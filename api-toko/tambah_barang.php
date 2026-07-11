@@ -1,168 +1,72 @@
 <?php
-// ==========================================
-// TANGKAP SEMUA ERROR & KEMBALIKAN SEBAGAI JSON
-// ==========================================
-ini_set('display_errors', 0);
-error_reporting(E_ALL);
-register_shutdown_function(function() {
-    $error = error_get_last();
-    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR])) {
-        if (!headers_sent()) {
-            header('Content-Type: application/json');
-        }
-        echo json_encode([
-            'status' => 'error',
-            'message' => '💥 Fatal Error: ' . $error['message'],
-            'file' => $error['file'],
-            'line' => $error['line']
-        ]);
-    }
-});
-
-// ==========================================
-// HEADER CORS
-// ==========================================
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+ob_start();
+include "koneksi.php";
 header('Content-Type: application/json');
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
+function getToken() {
+    if (function_exists('getallheaders')) {
+        foreach (getallheaders() as $k => $v)
+            if (strtolower($k) === 'authorization') return trim(str_replace('Bearer ', '', $v));
+    }
+    foreach (['HTTP_AUTHORIZATION', 'REDIRECT_HTTP_AUTHORIZATION'] as $key)
+        if (isset($_SERVER[$key])) return trim(str_replace('Bearer ', '', $_SERVER[$key]));
+    return '';
 }
 
-// ==========================================
-// KONEKSI DATABASE
-// ==========================================
-include 'koneksi.php';
-
-if (!$koneksi) {
-    echo json_encode([
-        'status'  => 'error',
-        'message' => 'Koneksi database gagal: ' . mysqli_connect_error()
-    ]);
+if (empty(getToken())) {
+    ob_clean(); http_response_code(401);
+    echo json_encode(["status" => "error", "message" => "Unauthorized"]);
     exit;
 }
 
-// ==========================================
-// CEK TOKEN (AUTH)
-// ==========================================
-require_once 'auth_check.php';
-$userLogin = cekToken($koneksi); // exit otomatis kalau token tidak valid
+$nama_barang = trim($_POST['nama_barang'] ?? '');
+$harga       = intval($_POST['harga']     ?? 0);
+$kode_qr     = trim($_POST['kode_qr']    ?? '');
+$latitude    = (isset($_POST['latitude'])  && $_POST['latitude']  !== '') ? floatval($_POST['latitude'])  : null;
+$longitude   = (isset($_POST['longitude']) && $_POST['longitude'] !== '') ? floatval($_POST['longitude']) : null;
 
-// ==========================================
-// AMBIL DATA — pakai $_POST karena FormData (bukan JSON)
-// ==========================================
-if (!isset($_POST['nama_barang']) || !isset($_POST['harga'])) {
-    echo json_encode([
-        'status'        => 'error',
-        'message'       => 'Data tidak lengkap!',
-        'data_diterima' => $_POST
-    ]);
+if (empty($nama_barang)) {
+    ob_clean();
+    echo json_encode(["status" => "error", "message" => "Nama barang tidak boleh kosong"]);
     exit;
 }
 
-$nama_barang = trim($_POST['nama_barang']);
-$harga = intval($_POST['harga']);
+// Auto-generate kode_qr jika tidak dikirim
+if (empty($kode_qr)) {
+    $kode_qr = 'QR-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 10));
+}
 
-if (empty($nama_barang) || $harga <= 0) {
+// Handle upload gambar
+$gambar = null;
+if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] === 0) {
+    $ext     = strtolower(pathinfo($_FILES['gambar']['name'], PATHINFO_EXTENSION));
+    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    if (in_array($ext, $allowed) && $_FILES['gambar']['size'] <= 2 * 1024 * 1024) {
+        $nama_file  = uniqid() . '.' . $ext;
+        $upload_dir = __DIR__ . '/uploads/';
+        if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
+        move_uploaded_file($_FILES['gambar']['tmp_name'], $upload_dir . $nama_file);
+        $gambar = $nama_file;
+    }
+}
+
+$n   = mysqli_real_escape_string($koneksi, $nama_barang);
+$q   = mysqli_real_escape_string($koneksi, $kode_qr);
+$g   = $gambar ? "'" . mysqli_real_escape_string($koneksi, $gambar) . "'" : 'NULL';
+$lat = $latitude  !== null ? $latitude  : 'NULL';
+$lng = $longitude !== null ? $longitude : 'NULL';
+
+$sql = "INSERT INTO barang (nama_barang, harga, gambar, kode_qr, latitude, longitude)
+        VALUES ('$n', $harga, $g, '$q', $lat, $lng)";
+
+ob_clean();
+if (mysqli_query($koneksi, $sql)) {
     echo json_encode([
-        'status'  => 'error',
-        'message' => 'Nama barang tidak boleh kosong dan harga harus > 0!'
-    ]);
-    exit;
-}
-
-// ==========================================
-// PROSES UPLOAD GAMBAR (jika ada)
-// ==========================================
-$nama_file_gambar = null;
-
-if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] === UPLOAD_ERR_OK) {
-    $tmpName  = $_FILES['gambar']['tmp_name'];
-    $namaAsli = $_FILES['gambar']['name'];
-    $ukuran   = $_FILES['gambar']['size'];
-
-    // Validasi ekstensi
-    $ekstensiDiizinkan = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-    $ekstensi = strtolower(pathinfo($namaAsli, PATHINFO_EXTENSION));
-
-    if (!in_array($ekstensi, $ekstensiDiizinkan)) {
-        echo json_encode([
-            'status'  => 'error',
-            'message' => 'Format gambar tidak didukung! Gunakan JPG, PNG, GIF, atau WEBP.'
-        ]);
-        exit;
-    }
-
-    // Validasi ukuran (maks 2MB)
-    if ($ukuran > 2 * 1024 * 1024) {
-        echo json_encode([
-            'status'  => 'error',
-            'message' => 'Ukuran gambar maksimal 2MB!'
-        ]);
-        exit;
-    }
-
-    // Buat direktori uploads jika belum ada
-    $direktoriUpload = __DIR__ . '/uploads';
-    if (!is_dir($direktoriUpload)) {
-        mkdir($direktoriUpload, 0755, true);
-    }
-
-    // Buat nama file unik
-    $nama_file_gambar = uniqid('barang_') . '.' . $ekstensi;
-    $tujuanUpload = $direktoriUpload . '/' . $nama_file_gambar;
-
-    if (!move_uploaded_file($tmpName, $tujuanUpload)) {
-        echo json_encode([
-            'status'  => 'error',
-            'message' => 'Gagal mengupload gambar!'
-        ]);
-        exit;
-    }
-}
-
-// ==========================================
-// INSERT KE DATABASE (Prepared Statement)
-// ==========================================
-if ($nama_file_gambar !== null) {
-    $stmt = mysqli_prepare($koneksi, "INSERT INTO barang (nama_barang, harga, gambar) VALUES (?, ?, ?)");
-    if (!$stmt) {
-        echo json_encode([
-            'status'  => 'error',
-            'message' => 'Prepare gagal: ' . mysqli_error($koneksi)
-        ]);
-        exit;
-    }
-    mysqli_stmt_bind_param($stmt, "sis", $nama_barang, $harga, $nama_file_gambar);
-} else {
-    $stmt = mysqli_prepare($koneksi, "INSERT INTO barang (nama_barang, harga) VALUES (?, ?)");
-    if (!$stmt) {
-        echo json_encode([
-            'status'  => 'error',
-            'message' => 'Prepare gagal: ' . mysqli_error($koneksi)
-        ]);
-        exit;
-    }
-    mysqli_stmt_bind_param($stmt, "si", $nama_barang, $harga);
-}
-
-if (mysqli_stmt_execute($stmt)) {
-    echo json_encode([
-        'status'  => 'success',
-        'message' => 'Barang berhasil ditambahkan!',
-        'id'      => mysqli_insert_id($koneksi),
-        'gambar'  => $nama_file_gambar
+        "status"  => "success",
+        "message" => "Barang berhasil ditambahkan",
+        "kode_qr" => $kode_qr
     ]);
 } else {
-    echo json_encode([
-        'status'  => 'error',
-        'message' => 'Gagal execute: ' . mysqli_stmt_error($stmt)
-    ]);
+    echo json_encode(["status" => "error", "message" => mysqli_error($koneksi)]);
 }
-
-mysqli_stmt_close($stmt);
-mysqli_close($koneksi);
 ?>
